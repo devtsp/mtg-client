@@ -38,9 +38,11 @@ const Card = ({ card }: { card: MagicApiCardResponse }) => {
 	const handleMouseMove = (e: React.MouseEvent) => {
 		if (isMouseDown) {
 			e.preventDefault();
-			setPosition({
-				x: e.clientX - dragStart.x,
-				y: e.clientY - dragStart.y,
+			requestAnimationFrame(() => {
+				setPosition({
+					x: e.clientX - dragStart.x,
+					y: e.clientY - dragStart.y,
+				});
 			});
 		}
 	};
@@ -87,7 +89,6 @@ const Card = ({ card }: { card: MagicApiCardResponse }) => {
 				style={{
 					position: 'absolute',
 					cursor: 'grab',
-					color: 'red',
 
 					// card aspect
 					width: '150px',
@@ -109,7 +110,45 @@ const Card = ({ card }: { card: MagicApiCardResponse }) => {
 					...(isMouseOver && { outline: '2px solid cyan' }),
 					...(isMouseDown && { cursor: 'grabbing', zIndex: 100 }),
 				}}
-			></div>
+			>
+				{!card.imageUrl && (
+					<div
+						style={{
+							backgroundColor: 'white',
+							borderRadius: '10px',
+							fontSize: '10px',
+							height: '100%',
+							padding: '5px',
+							display: 'flex',
+							flexDirection: 'column',
+						}}
+					>
+						<div style={{ display: 'flex', justifyContent: 'space-between' }}>
+							<p style={{ fontWeight: '800' }}>{card.name}</p>
+							<p>{card.manaCost}</p>
+						</div>
+						<p>{card.type}</p>
+						<p
+							style={{
+								border: '1px solid gray',
+								padding: '5px',
+								height: '100%',
+							}}
+						>
+							{card.text}
+						</p>
+						<p
+							style={{
+								fontSize: '16px',
+								fontWeight: '800',
+								textAlign: 'right',
+							}}
+						>
+							{card.power}/{card.toughness}
+						</p>
+					</div>
+				)}
+			</div>
 			{isBeingZoomed && (
 				<div
 					onMouseDown={() => setIsBeingZoomed(false)}

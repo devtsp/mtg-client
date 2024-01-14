@@ -36,7 +36,7 @@ function Board() {
 		>
 			{cards.length > 0 &&
 				cards.map((card, index) => {
-					if (!card.imageUrl) return null;
+					// if (!card.imageUrl) return null;
 					return <Card key={card.id + index} card={card} />;
 				})}
 		</div>
