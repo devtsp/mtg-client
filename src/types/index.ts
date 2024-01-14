@@ -1,0 +1,36 @@
+export type MagicApiCardResponse = {
+	'name': string;
+	'manaCost': string;
+	'cmc': 7.0;
+	'colors': Array<string>;
+	'colorIdentity': Array<string>;
+	'type': string;
+	'types': Array<string>;
+	'subtypes': Array<string>;
+	'rarity': string;
+	'set': string;
+	'setName': string;
+	'text': string;
+	'artist': string;
+	'number': string;
+	'power': string;
+	'toughness': string;
+	'layout': string;
+	'multiverseid': string;
+	'imageUrl': string;
+	'variations': Array<string>;
+	'foreignNames': Array<{
+		'name': string;
+		'text': string;
+		'type': string;
+		'flavor': string;
+		'imageUrl': string;
+		'language': string;
+		'multiverseid': number;
+	}>;
+	'printings': Array<string>;
+	'originalText': string;
+	'originalType': string;
+	'legalities': Array<{ 'format': string; 'legality': string }>;
+	'id': string;
+};
