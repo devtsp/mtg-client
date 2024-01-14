@@ -2,17 +2,22 @@ import React from 'react';
 
 import type { MagicApiCardResponse } from 'src/types';
 
-const Card = ({ card }: { card: MagicApiCardResponse }) => {
+const Card = (props: {
+	card: MagicApiCardResponse;
+	initialCoordinates: { x: number; y: number };
+	index: number;
+	isSelected: boolean;
+}) => {
 	const cardRef = React.useRef<HTMLDivElement>(null);
-	const [position, setPosition] = React.useState({ x: 0, y: 0 });
+	const [position, setPosition] = React.useState(props.initialCoordinates);
 	const [isTapped, setIsTapped] = React.useState(false);
-	const [isFaceDown, setIsFaceDown] = React.useState(false);
+	const [isFaceDown, setIsFaceDown] = React.useState(true);
 
 	const [isMouseOver, setIsMouseOver] = React.useState(false);
 	const [isMouseDown, setIsMouseDown] = React.useState(false);
 	const [isBeingZoomed, setIsBeingZoomed] = React.useState(false);
-	const [dragStart, setDragStart] = React.useState({ x: 0, y: 0 });
-	const [zIndex, setZIndex] = React.useState(1);
+	const [dragStart, setDragStart] = React.useState(props.initialCoordinates);
+	const [zIndex, setZIndex] = React.useState(props.index);
 
 	function handleMouseEnter() {
 		setIsMouseOver(true);
@@ -26,6 +31,7 @@ const Card = ({ card }: { card: MagicApiCardResponse }) => {
 	}
 
 	const handleMouseDown = (e: React.MouseEvent) => {
+		e.stopPropagation();
 		if (e.button == 2) {
 			e.preventDefault();
 			setIsBeingZoomed(!isBeingZoomed);
@@ -47,7 +53,8 @@ const Card = ({ card }: { card: MagicApiCardResponse }) => {
 		}
 	};
 
-	const handleMouseUp = () => {
+	const handleMouseUp = (e: React.MouseEvent) => {
+		e.stopPropagation();
 		setIsMouseDown(false);
 	};
 
@@ -77,6 +84,7 @@ const Card = ({ card }: { card: MagicApiCardResponse }) => {
 	return (
 		<>
 			<div
+				id={props.card.id}
 				tabIndex={0}
 				ref={cardRef}
 				onMouseEnter={handleMouseEnter}
@@ -89,11 +97,12 @@ const Card = ({ card }: { card: MagicApiCardResponse }) => {
 				style={{
 					position: 'absolute',
 					cursor: 'grab',
+					userSelect: 'none',
 
 					// card aspect
 					width: '150px',
 					aspectRatio: 1 / 1.4,
-					backgroundImage: `url(${card.imageUrl})`,
+					backgroundImage: `url(${props.card.imageUrl})`,
 					backgroundSize: 'contain',
 					backgroundRepeat: 'no-repeat',
 					backgroundPosition: 'center',
@@ -109,9 +118,10 @@ const Card = ({ card }: { card: MagicApiCardResponse }) => {
 					...(isFaceDown && { backgroundImage: 'url(public/card_back.jpg)' }),
 					...(isMouseOver && { outline: '2px solid cyan' }),
 					...(isMouseDown && { cursor: 'grabbing', zIndex: 100 }),
+					...(props.isSelected && { outline: '2px solid yellowgreen' }),
 				}}
 			>
-				{!card.imageUrl && (
+				{!props.card.imageUrl && !isFaceDown && (
 					<div
 						style={{
 							backgroundColor: 'white',
@@ -124,10 +134,10 @@ const Card = ({ card }: { card: MagicApiCardResponse }) => {
 						}}
 					>
 						<div style={{ display: 'flex', justifyContent: 'space-between' }}>
-							<p style={{ fontWeight: '800' }}>{card.name}</p>
-							<p>{card.manaCost}</p>
+							<p style={{ fontWeight: '800' }}>{props.card.name}</p>
+							<p>{props.card.manaCost}</p>
 						</div>
-						<p>{card.type}</p>
+						<p>{props.card.type}</p>
 						<p
 							style={{
 								border: '1px solid gray',
@@ -135,7 +145,7 @@ const Card = ({ card }: { card: MagicApiCardResponse }) => {
 								height: '100%',
 							}}
 						>
-							{card.text}
+							{props.card.text}
 						</p>
 						<p
 							style={{
@@ -144,7 +154,7 @@ const Card = ({ card }: { card: MagicApiCardResponse }) => {
 								textAlign: 'right',
 							}}
 						>
-							{card.power}/{card.toughness}
+							{props.card.power}/{props.card.toughness}
 						</p>
 					</div>
 				)}
@@ -155,7 +165,7 @@ const Card = ({ card }: { card: MagicApiCardResponse }) => {
 					style={{
 						width: '400px',
 						aspectRatio: 1 / 1.4,
-						backgroundImage: `url(${card.imageUrl})`,
+						backgroundImage: `url(${props.card.imageUrl})`,
 						backgroundSize: 'contain',
 						backgroundRepeat: 'no-repeat',
 						backgroundPosition: 'center',
