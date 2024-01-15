@@ -7,6 +7,8 @@ const Card = (props: {
 	initialCoordinates: { x: number; y: number };
 	index: number;
 	isSelected: boolean;
+	dragOffset: { x: number; y: number };
+	dragStartPositions: { [key: string]: { x: number; y: number } } | undefined;
 }) => {
 	const cardRef = React.useRef<HTMLDivElement>(null);
 	const [position, setPosition] = React.useState(props.initialCoordinates);
@@ -31,7 +33,6 @@ const Card = (props: {
 	}
 
 	const handleMouseDown = (e: React.MouseEvent) => {
-		e.stopPropagation();
 		if (e.button == 2) {
 			e.preventDefault();
 			setIsBeingZoomed(!isBeingZoomed);
@@ -53,8 +54,7 @@ const Card = (props: {
 		}
 	};
 
-	const handleMouseUp = (e: React.MouseEvent) => {
-		e.stopPropagation();
+	const handleMouseUp = () => {
 		setIsMouseDown(false);
 	};
 
@@ -81,9 +81,25 @@ const Card = (props: {
 		}
 	}
 
+	React.useEffect(() => {
+		if (!props.dragStartPositions) return;
+		if (props.isSelected) {
+			setZIndex(100);
+			// Calculate the drag offset for this card based on its initial position
+			const dragStartPos = props.dragStartPositions[props.card.id];
+			if (dragStartPos) {
+				setPosition({
+					x: dragStartPos.x + props.dragOffset.x,
+					y: dragStartPos.y + props.dragOffset.y,
+				});
+			}
+		}
+	}, [props.dragOffset]);
+
 	return (
 		<>
 			<div
+				data-element="CARD"
 				id={props.card.id}
 				tabIndex={0}
 				ref={cardRef}

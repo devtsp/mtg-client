@@ -11,6 +11,13 @@ function Board() {
 	const boardRef = React.useRef<HTMLDivElement>(null);
 	const [cards, setCards] = React.useState<MagicApiCardResponse[]>([]);
 	const [selectedCards, setSelectedCards] = React.useState<string[]>([]);
+	const [dragStartPositions, setDragStartPositions] = React.useState<{
+		[key: string]: { x: number; y: number };
+	}>();
+
+	const [isDragging, setIsDragging] = React.useState(false);
+	const [dragStart, setDragStart] = React.useState({ x: 0, y: 0 });
+	const [dragOffset, setDragOffset] = React.useState({ x: 0, y: 0 });
 
 	const [isSelecting, setIsSelecting] = React.useState(false);
 	const [selectionArea, setSelectionArea] = React.useState({
@@ -21,25 +28,49 @@ function Board() {
 	});
 
 	const handleMouseDown = (e: React.MouseEvent) => {
-		setIsSelecting(true);
-		const { clientX, clientY } = e;
-		setSelectionArea({
-			startX: clientX,
-			startY: clientY,
-			endX: clientX,
-			endY: clientY,
-		});
+		if (!(e.target instanceof HTMLDivElement)) {
+			return;
+		}
+		if (e.target.dataset.element === 'CARD') {
+			setIsDragging(true);
+			setDragStart({ x: e.clientX, y: e.clientY });
+
+			// Store the initial positions of the selected cards
+			const newDragStartPositions: typeof dragStartPositions = {};
+			selectedCards.forEach(cardId => {
+				const cardElement = document.getElementById(cardId);
+				if (cardElement) {
+					const cardRect = cardElement.getBoundingClientRect();
+					newDragStartPositions[cardId] = { x: cardRect.left, y: cardRect.top };
+				}
+			});
+			setDragStartPositions(newDragStartPositions);
+		} else if (e.target.dataset.element === 'BOARD') {
+			setIsSelecting(true);
+			const { clientX, clientY } = e;
+			setSelectionArea({
+				startX: clientX,
+				startY: clientY,
+				endX: clientX,
+				endY: clientY,
+			});
+		}
 	};
 
 	const handleMouseMove = (e: React.MouseEvent) => {
 		if (isSelecting) {
 			const { clientX, clientY } = e;
 			setSelectionArea(prev => ({ ...prev, endX: clientX, endY: clientY }));
+		} else if (isDragging && selectedCards.length > 0) {
+			const deltaX = e.clientX - dragStart.x;
+			const deltaY = e.clientY - dragStart.y;
+			setDragOffset({ x: deltaX, y: deltaY });
 		}
 	};
 
 	const handleMouseUp = () => {
 		setIsSelecting(false);
+		setIsDragging(false);
 		logSelectedCards();
 	};
 
@@ -95,6 +126,7 @@ function Board() {
 
 	return (
 		<div
+			data-element="BOARD"
 			ref={boardRef}
 			onMouseDown={handleMouseDown}
 			onMouseMove={handleMouseMove}
@@ -130,6 +162,8 @@ function Board() {
 								initialCoordinates={{ x: 5, y: 470 }}
 								index={index}
 								isSelected={selectedCards.includes(card.id)}
+								dragOffset={dragOffset}
+								dragStartPositions={dragStartPositions}
 							/>
 						);
 					})}
