@@ -7,6 +7,27 @@ document.addEventListener('contextmenu', event => {
   event.preventDefault();
 });
 
+function shuffle(array: MagicApiCardResponse[]) {
+  const copy = [...array];
+  let currentIndex = copy.length,
+    randomIndex;
+
+  // While there remain elements to shuffle.
+  while (currentIndex > 0) {
+    // Pick a remaining element.
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+
+    // And swap it with the current element.
+    [copy[currentIndex], copy[randomIndex]] = [
+      copy[randomIndex],
+      copy[currentIndex],
+    ];
+  }
+
+  return copy;
+}
+
 function Board() {
   const boardRef = React.useRef<HTMLDivElement>(null);
   const [cards, setCards] = React.useState<MagicApiCardResponse[]>([]);
@@ -37,19 +58,28 @@ function Board() {
       setIsDragging(true);
       setDragStart({ x: e.clientX, y: e.clientY });
 
+      const scrollLeft = document.documentElement.scrollLeft;
+      const scrollTop = document.documentElement.scrollTop;
+
       // Store the initial positions of the selected cards
       const newDragStartPositions: typeof dragStartPositions = {};
       selectedCards.forEach(cardId => {
         const cardElement = document.getElementById(cardId);
         if (cardElement) {
           const cardRect = cardElement.getBoundingClientRect();
-          newDragStartPositions[cardId] = { x: cardRect.left, y: cardRect.top };
+          newDragStartPositions[cardId] = {
+            x: cardRect.left + scrollLeft,
+            y: cardRect.top + scrollTop,
+          };
         }
       });
       setDragStartPositions(newDragStartPositions);
     } else if (e.target.dataset.element === 'BOARD') {
       setIsSelecting(true);
-      const { clientX, clientY } = e;
+      const scrollLeft = document.documentElement.scrollLeft;
+      const scrollTop = document.documentElement.scrollTop;
+      const clientX = e.clientX + scrollLeft;
+      const clientY = e.clientY + scrollTop;
       setSelectionArea({
         startX: clientX,
         startY: clientY,
@@ -61,7 +91,10 @@ function Board() {
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (isSelecting) {
-      const { clientX, clientY } = e;
+      const scrollLeft = document.documentElement.scrollLeft;
+      const scrollTop = document.documentElement.scrollTop;
+      const clientX = e.clientX + scrollLeft;
+      const clientY = e.clientY + scrollTop;
       setSelectionArea(prev => ({ ...prev, endX: clientX, endY: clientY }));
     } else if (isDragging && selectedCards.length > 0) {
       const deltaX = e.clientX - dragStart.x;
@@ -71,9 +104,17 @@ function Board() {
   };
 
   const handleMouseUp = () => {
-    isSelecting && setIsSelecting(false);
-    isDragging && setIsDragging(false);
-    logSelectedCards();
+    if (isDragging) {
+      setIsDragging(false);
+    } else if (isSelecting) {
+      setIsSelecting(false);
+      logSelectedCards();
+    }
+
+    // Only clear the selection if the user is not dragging cards
+    if (!isDragging) {
+      setSelectionArea({ startX: 0, startY: 0, endX: 0, endY: 0 });
+    }
   };
 
   const logSelectedCards = () => {
@@ -126,7 +167,7 @@ function Board() {
       try {
         const response = await fetch('public/magic_api_response.json');
         const data = await response.json();
-        setCards(data.cards);
+        setCards(shuffle(data.cards));
       } catch (error) {
         console.log(error);
       }
@@ -134,6 +175,9 @@ function Board() {
 
     getCards();
   }, []);
+
+  const deck1 = cards.slice(0, 5);
+  const deck2 = cards.slice(5, 10);
 
   return (
     <div
@@ -146,8 +190,8 @@ function Board() {
       onKeyDown={handleKeyDown}
       style={{
         height: '200vh',
-        width: '96vw',
-        margin: '10px',
+        width: '100%',
+        overflowX: 'hidden',
         backgroundColor: 'hsl(0, 0%, 50%)',
         position: 'relative',
       }}
@@ -167,14 +211,30 @@ function Board() {
         />
       )}
 
-      {/* Initial "deck" of cards */}
+      {/* Deck 1 */}
       {cards.length > 0 &&
-        cards.slice(0, 23).map((card, index) => {
+        deck1.map((card, index) => {
           return (
             <Card
               key={card.id + index}
               card={card}
-              initialCoordinates={{ x: 5, y: 470 }}
+              initialCoordinates={{ x: index + 5, y: index + 5 }}
+              index={index}
+              isSelected={selectedCards.includes(card.id)}
+              dragOffset={dragOffset}
+              dragStartPositions={dragStartPositions}
+            />
+          );
+        })}
+
+      {/* Deck 2 */}
+      {cards.length > 0 &&
+        deck2.map((card, index) => {
+          return (
+            <Card
+              key={card.id + index}
+              card={card}
+              initialCoordinates={{ x: index + 5, y: index + 250 }}
               index={index}
               isSelected={selectedCards.includes(card.id)}
               dragOffset={dragOffset}

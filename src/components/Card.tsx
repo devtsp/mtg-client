@@ -46,7 +46,6 @@ const Card = (props: {
   const handleMouseMove = (e: React.MouseEvent) => {
     if (isMouseDown) {
       e.preventDefault();
-      setZIndex(101);
       requestAnimationFrame(() => {
         setPosition({
           x: e.clientX - dragStart.x,
@@ -58,12 +57,7 @@ const Card = (props: {
 
   const handleMouseUp = () => {
     setIsMouseDown(false);
-    setZIndex(1);
   };
-
-  function handleDoubleClick() {
-    setIsTapped(!isTapped);
-  }
 
   function handleKeyDown(e: React.KeyboardEvent) {
     switch (e.key) {
@@ -73,14 +67,14 @@ const Card = (props: {
       case 'f':
         setIsFaceDown(!isFaceDown);
         break;
-      // case 'ArrowUp':
-      // 	e.preventDefault();
-      // 	zIndex < 100 && setZIndex(zIndex + 1);
-      // 	break;
-      // case 'ArrowDown':
-      // 	e.preventDefault();
-      // 	zIndex > 1 && setZIndex(zIndex - 1);
-      // 	break;
+      case 'ArrowUp':
+        e.preventDefault();
+        zIndex < 100 && setZIndex(zIndex + 1);
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        zIndex > 1 && setZIndex(zIndex - 1);
+        break;
       default:
         break;
     }
@@ -110,6 +104,7 @@ const Card = (props: {
     <>
       <div
         data-element="CARD"
+        data-card-name={props.card.name}
         id={props.card.id}
         tabIndex={0}
         ref={cardRef}
@@ -119,7 +114,6 @@ const Card = (props: {
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseLeave}
         onKeyDown={handleKeyDown}
-        onDoubleClick={handleDoubleClick}
         style={{
           position: 'absolute',
           userSelect: 'none',
@@ -127,58 +121,73 @@ const Card = (props: {
           // card aspect
           fontFamily: 'garamond',
           width: '150px',
-          aspectRatio: 1 / 1.4,
+          aspectRatio: 1 / 1.39,
+          borderRadius: '7px',
           // Original card image is set as the backgroundImage of the main container
           backgroundImage: `url(${props.card.imageUrl})`,
           backgroundSize: 'contain',
           backgroundRepeat: 'no-repeat',
           backgroundPosition: 'center',
-          borderRadius: '10px',
 
           // card 3d position
           top: position.y,
           left: position.x,
-          zIndex: zIndex,
+          zIndex: isMouseOver ? 101 : zIndex,
 
           // card style states
           ...(isTapped && { transform: 'rotate(-30deg)' }),
-          ...(isFaceDown && { backgroundImage: 'url(public/card_back.jpg)' }),
+          ...(isFaceDown && {
+            backgroundImage: 'url(public/card_back.jpg)',
+            backgroundSize: 'cover',
+          }),
           ...(isMouseOver && { outline: '4px solid cyan' }),
           ...(isMouseDown && { cursor: 'grabbing', zIndex: 100 }),
-          // ...(isMouseOver && !isMouseDown && { transform: 'scale(2)' }),
           ...(props.isSelected && { outline: '4px solid yellowgreen' }),
         }}
       >
         {/* If no image provided display raw data */}
 
-        {/* Maint raw data container */}
+        {/* Main raw data container */}
         {!props.card.imageUrl && !isFaceDown && (
           <div
             style={{
-              backgroundColor: 'white',
-              borderRadius: '10px',
+              backgroundColor: props.card.colorIdentity.includes('W')
+                ? 'wheat'
+                : 'yellow',
+              borderRadius: '7px',
               height: '100%',
-              padding: '10px',
+              overflow: 'hidden',
+              padding: '5px',
               display: 'flex',
               flexDirection: 'column',
-              fontFamily: 'arial',
-              fontSize: '12px',
+              fontSize: '14px',
+              border: '8px solid black',
             }}
           >
             {/* Card header container */}
             <div
               style={{
                 display: 'flex',
-                justifyContent: 'space-between',
+                width: '100%',
                 alignItems: 'center',
-                height: '20px',
+                fontSize: '16px',
+                flexWrap: 'wrap',
               }}
             >
               {/* Card Name */}
-              <p style={{ fontWeight: '800' }}>{props.card.name}</p>
+              <p
+                style={{
+                  fontWeight: '600',
+                  paddingRight: '10px',
+                  marginRight: 'auto',
+                  lineHeight: '1',
+                }}
+              >
+                {props.card.name}
+              </p>
 
               {/* Mana Cost */}
-              <div style={{ marginLeft: 'auto' }}>
+              <div>
                 {/* Generic */}
                 {props.card.manaCost.replace(/\D+/g, '')}
                 {/* Colored */}
@@ -196,6 +205,7 @@ const Card = (props: {
             <p
               style={{
                 marginTop: 'auto',
+                lineHeight: '1',
               }}
             >
               {props.card.type}
@@ -205,9 +215,13 @@ const Card = (props: {
             <p
               style={{
                 border: '1px solid gray',
+                borderRadius: '4px',
                 padding: '5px',
-                height: 'fit-content',
+                maxHeight: '50%',
+                overflow: 'auto',
                 lineHeight: '1.1',
+                fontFamily: 'arial',
+                fontSize: '12px',
               }}
             >
               {props.card.text}
@@ -217,9 +231,10 @@ const Card = (props: {
             {props.card.power && (
               <p
                 style={{
-                  fontSize: '16px',
+                  fontSize: '14px',
                   fontWeight: '800',
                   textAlign: 'right',
+                  height: '15px',
                 }}
               >
                 {props.card.power}/{props.card.toughness}
@@ -230,7 +245,7 @@ const Card = (props: {
       </div>
 
       {/* Big preview on hover */}
-      {isMouseOver && !isFaceDown && !isMouseDown && (
+      {isMouseOver && !isMouseDown && (
         <div
           style={{
             width: '20vw',
@@ -238,9 +253,6 @@ const Card = (props: {
             ...(props.card.imageUrl
               ? {
                   backgroundImage: `url(${props.card.imageUrl})`,
-                  backgroundSize: 'contain',
-                  backgroundRepeat: 'no-repeat',
-                  backgroundPosition: 'center',
                 }
               : {
                   backgroundColor: 'white',
@@ -248,32 +260,36 @@ const Card = (props: {
                   padding: '15px',
                   display: 'flex',
                   flexDirection: 'column',
-                  outline: '10px solid black',
-                  outlineOffset: '-10px',
+                  outline: '20px solid black',
+                  outlineOffset: '-20px',
                 }),
             lineHeight: '1.1',
-            borderRadius: '16px',
+            borderRadius: '18px',
             position: 'fixed',
+            right: 0,
             cursor: 'pointer',
             transition: 'all 0.1s ease-in-out',
             zIndex: 1000,
             pointerEvents: 'none',
+            fontFamily: 'garamond',
+            fontSize: '26px',
+            padding: '30px',
+            backgroundSize: 'contain',
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'center',
+            ...(isFaceDown && { backgroundImage: 'url(public/card_back.jpg)' }),
           }}
         >
           {/* If no image available display raw data */}
 
           {/* Main raw data container */}
-          {!props.card.imageUrl && (
+          {!props.card.imageUrl && !isFaceDown && (
             <div
               style={{
                 backgroundColor: 'white',
-                borderRadius: '6px',
-                fontSize: '15px',
                 height: '100%',
-                padding: '5px',
                 display: 'flex',
                 flexDirection: 'column',
-                fontFamily: 'arial',
               }}
             >
               {/* Card Header */}
@@ -282,6 +298,10 @@ const Card = (props: {
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
+                  padding: '12px 3px 6px 14px',
+                  lineHeight: '18px',
+                  border: '3px ridge lightgray',
+                  borderRadius: '8px',
                 }}
               >
                 <p style={{ fontWeight: '800' }}>{props.card.name}</p>
@@ -305,6 +325,7 @@ const Card = (props: {
               <p
                 style={{
                   marginTop: 'auto',
+                  lineHeight: '18px',
                 }}
               >
                 {props.card.type}
@@ -313,10 +334,12 @@ const Card = (props: {
               {/* Card Text */}
               <p
                 style={{
-                  border: '1px solid gray',
-                  padding: '5px',
-                  height: 'fit-content',
+                  border: '5px inset lightgray',
+                  padding: '10px 14px',
+                  maxHeight: '50%',
+                  overflow: 'auto',
                   lineHeight: '1.1',
+                  marginTop: '10px',
                 }}
               >
                 {props.card.text}
@@ -326,7 +349,8 @@ const Card = (props: {
               {props.card.power && (
                 <p
                   style={{
-                    fontSize: '16px',
+                    fontSize: '30px',
+                    marginTop: '5px',
                     fontWeight: '800',
                     textAlign: 'right',
                   }}

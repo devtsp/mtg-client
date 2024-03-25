@@ -1,18 +1,43 @@
 :root {
-	font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-	line-height: 1.5;
-	font-weight: 400;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
 
-	font-synthesis: none;
-	text-rendering: optimizeLegibility;
-	-webkit-font-smoothing: antialiased;
-	-moz-osx-font-smoothing: grayscale;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 * {
-	box-sizing: border-box;
-	margin: 0;
-	padding: 0;
-	min-width: 0;
-	cursor: grab;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  cursor: grab;
+}
+
+/* width */
+[data-element='CARD'] ::-webkit-scrollbar {
+  width: 5px;
+}
+
+/* Track */
+[data-element='CARD'] ::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+/* Handle */
+[data-element='CARD'] ::-webkit-scrollbar-thumb {
+  background: #888;
+}
+
+/* Handle on hover */
+[data-element='CARD'] ::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+p {
+  /* color:  */
 }
