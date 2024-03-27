@@ -285,7 +285,7 @@ const Card = (props: {
             backgroundSize: 'contain',
             backgroundRepeat: 'no-repeat',
             backgroundPosition: 'center',
-            ...(isFaceDown && { backgroundImage: 'url(public/card_back.jpg)' }),
+            ...(isFaceDown && { backgroundImage: 'url(card_back.jpg)' }),
           }}
         >
           {/* If no image available display raw data */}
