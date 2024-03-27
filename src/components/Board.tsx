@@ -2,37 +2,13 @@
 import React from 'react';
 
 import Card from './Card';
-import type {
-  ScryfallApiResponseCard,
-  ScryfallApiResponseList,
-} from 'src/types';
+import type { ScryfallApiResponseList } from 'src/types';
 
 document.addEventListener('contextmenu', event => {
   event.preventDefault();
 });
 
 const API_1 = 'https://api.scryfall.com';
-
-function shuffle(array: ScryfallApiResponseCard[]) {
-  const copy = [...array];
-  let currentIndex = copy.length,
-    randomIndex;
-
-  // While there remain elements to shuffle.
-  while (currentIndex > 0) {
-    // Pick a remaining element.
-    randomIndex = Math.floor(Math.random() * currentIndex);
-    currentIndex--;
-
-    // And swap it with the current element.
-    [copy[currentIndex], copy[randomIndex]] = [
-      copy[randomIndex],
-      copy[currentIndex],
-    ];
-  }
-
-  return copy;
-}
 
 function Board() {
   const boardRef = React.useRef<HTMLDivElement>(null);
@@ -44,8 +20,8 @@ function Board() {
   >({
     data: [],
   });
+  const [error, setError] = React.useState<any>();
 
-  const [cards, setCards] = React.useState<ScryfallApiResponseCard[]>([]);
   const [selectedCards, setSelectedCards] = React.useState<string[]>([]);
   const [dragStartPositions, setDragStartPositions] = React.useState<{
     [key: string]: { x: number; y: number };
@@ -143,7 +119,7 @@ function Board() {
     const scrollLeft = document.documentElement.scrollLeft;
     const scrollTop = document.documentElement.scrollTop;
 
-    const newSelectedCards = cards.filter(card => {
+    const newSelectedCards = fetched?.data?.filter(card => {
       const cardRect = document
         .getElementById(card.id)
         ?.getBoundingClientRect();
@@ -171,7 +147,7 @@ function Board() {
       );
     });
 
-    setSelectedCards(newSelectedCards.map(card => card.id));
+    setSelectedCards(newSelectedCards!.map(card => card.id));
     console.log('Selected Cards:', newSelectedCards);
   };
 
@@ -179,39 +155,31 @@ function Board() {
     console.log('Keydown ', e.key);
     if (e.key === 'Escape') {
       setSelectedCards([]);
-    } else if (e.key === 'm') {
+    } else if (e.key.toLowerCase() === 'm') {
       const focusedElement = document.activeElement;
-      if (focusedElement instanceof HTMLTextAreaElement) return;
+      if (focusedElement instanceof HTMLInputElement) return;
       setMenuOpen(!menuOpen);
     }
   }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    fetch(API_1 + userInput)
-      .then(r => r.json())
+    fetch(API_1 + '/cards/search?page=1&q=' + userInput)
+      .then(r => {
+        if (!r.ok) {
+          throw new Error(r.statusText);
+        }
+        return r.json();
+      })
       .then(cards => {
         console.log(cards);
         setFetched(cards);
       })
-      .catch(err => console.error(err));
+      .catch(err => {
+        console.log(err);
+        setError(err);
+      });
   }
-
-  React.useEffect(() => {
-    async function getCards() {
-      try {
-        const response = await fetch('public/magic_api_response.json');
-        const data = await response.json();
-        setCards(shuffle(data.cards));
-      } catch (error) {
-        console.log(error);
-      }
-    }
-
-    getCards();
-  }, []);
-
-  const PRESETS = ['/cards/search?page=1&q=omnath'];
 
   return (
     <div
@@ -242,7 +210,6 @@ function Board() {
             height: '100%',
             backgroundColor: 'rgba(255,255,255,.3)',
             zIndex: 200,
-            // width: '40vw',
           }}
         >
           {/* FORM */}
@@ -253,41 +220,18 @@ function Board() {
             }}
           >
             {/* TEXT INPUT */}
-            <textarea
+            <input
               style={{
                 width: '100%',
                 padding: '1rem',
                 resize: 'none',
               }}
-              rows={1}
               value={userInput}
               onChange={e => setUserInput(e.target.value)}
               name="cardList"
               id="card-list"
-            ></textarea>
+            />
 
-            {/* SELECTOR */}
-            <select
-              name="presets"
-              id="presets"
-              onChange={e => {
-                setUserInput(e.target.value);
-              }}
-              style={{
-                padding: '10px',
-                width: '100%',
-              }}
-              value={userInput}
-            >
-              <option disabled value="">
-                Select
-              </option>
-              {/* OPTIONS */}
-              {PRESETS.map(o => {
-                return <option value={o}>{o}</option>;
-              })}
-            </select>
-            <br />
             <div
               style={{
                 display: 'flex',
@@ -305,9 +249,18 @@ function Board() {
                 Clear
               </button>
             </div>
+            {error && (
+              <div
+                style={{
+                  color: 'crimson',
+                }}
+              >
+                {error.toString()}
+              </div>
+            )}
           </form>
           <a
-            href="https://scryfall.com/docs/api/cards"
+            href="https://scryfall.com/docs/api"
             target="_blank"
             style={{
               margin: '20px',
@@ -334,23 +287,25 @@ function Board() {
       )}
 
       {/* Cards Spawned */}
-      {fetched?.data?.map((card, index) => {
-        if (!card?.id) {
-          return <div>Uups</div>;
-        }
+      {!error &&
+        fetched?.data?.length &&
+        fetched.data?.map((card, index) => {
+          if (!card?.id) {
+            return <div>Uups</div>;
+          }
 
-        return (
-          <Card
-            key={card.id + index}
-            card={card}
-            initialCoordinates={{ x: index * 30 + 5, y: 650 }}
-            index={index}
-            isSelected={selectedCards.includes(card.id)}
-            dragOffset={dragOffset}
-            dragStartPositions={dragStartPositions}
-          />
-        );
-      })}
+          return (
+            <Card
+              key={card.id + index}
+              card={card}
+              initialCoordinates={{ x: index * 30 + 5, y: 650 }}
+              index={index}
+              isSelected={selectedCards.includes(card.id)}
+              dragOffset={dragOffset}
+              dragStartPositions={dragStartPositions}
+            />
+          );
+        })}
     </div>
   );
 }
