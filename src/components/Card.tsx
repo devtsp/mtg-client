@@ -150,29 +150,14 @@ const Card = (props: {
         {!props.card.image_uris?.png && !isFaceDown && (
           <div
             style={{
-              // backgroundColor: (() => {
-              //   switch (props?.card?.color_identity?.[0]) {
-              //     case 'W':
-              //       return 'wheat';
-              //     case 'U':
-              //       return 'cyan';
-              //     case 'B':
-              //       return 'darkgray';
-              //     case 'R':
-              //       return 'salmon';
-              //     case 'G':
-              //       return 'yellowgreen';
-              //     default:
-              //       return 'lightgray';
-              //   }
-              // })(),
+              backgroundColor: 'gray',
               borderRadius: '7px',
               height: '100%',
               overflow: 'hidden',
               padding: '5px',
               display: 'flex',
               flexDirection: 'column',
-              fontSize: '14px',
+              fontSize: '12px',
               border: '8px solid black',
             }}
           >
@@ -182,7 +167,7 @@ const Card = (props: {
                 display: 'flex',
                 width: '100%',
                 alignItems: 'center',
-                fontSize: '16px',
+                fontSize: '12px',
                 flexWrap: 'wrap',
               }}
             >
@@ -199,11 +184,21 @@ const Card = (props: {
               </p>
 
               {/* Mana Cost */}
-              <div>
+              <div
+                style={{
+                  whiteSpace: 'nowrap',
+                }}
+              >
                 {/* Generic */}
-                {props?.card?.mana_cost?.replace(/\D+/g, '')}
+                {(
+                  props?.card?.mana_cost ||
+                  props?.card?.card_faces?.[0].mana_cost
+                )?.replace(/\D+/g, '')}
                 {/* Colored */}
-                {props?.card?.mana_cost
+                {(
+                  props?.card?.mana_cost ||
+                  props?.card?.card_faces?.[0].mana_cost
+                )
                   ?.replace(/[{}\d]/g, '')
                   ?.replace(/W/g, '🌞')
                   ?.replace(/U/g, '💧')
@@ -226,8 +221,7 @@ const Card = (props: {
             {/* Card Text */}
             <p
               style={{
-                border: '1px solid gray',
-                borderRadius: '4px',
+                border: '1px solid black',
                 padding: '5px',
                 maxHeight: '50%',
                 overflow: 'auto',
@@ -240,18 +234,21 @@ const Card = (props: {
             </p>
 
             {/* Creature Stats */}
-            {props.card.power && (
-              <p
-                style={{
-                  fontSize: '14px',
-                  fontWeight: '800',
-                  textAlign: 'right',
-                  height: '15px',
-                }}
-              >
-                {props.card.power}/{props.card.toughness}
-              </p>
-            )}
+            {props.card.power ||
+              (props?.card?.card_faces?.[0].power && (
+                <p
+                  style={{
+                    fontSize: '14px',
+                    fontWeight: '800',
+                    textAlign: 'right',
+                    height: '15px',
+                  }}
+                >
+                  {props.card.power || props?.card?.card_faces?.[0].power}/
+                  {props.card.toughness ||
+                    props?.card?.card_faces?.[0].toughness}
+                </p>
+              ))}
           </div>
         )}
       </div>
@@ -261,6 +258,7 @@ const Card = (props: {
         <div
           style={{
             width: 'max(15vw, 300px)',
+            backgroundColor: 'gray',
             aspectRatio: '1 / 1.4',
             ...(props.card.image_uris?.png
               ? {
@@ -282,7 +280,6 @@ const Card = (props: {
             transition: 'all 0.1s ease-in-out',
             zIndex: 1000,
             pointerEvents: 'none',
-            fontFamily: 'garamond',
             fontSize: '20px',
             padding: '30px',
             backgroundSize: 'contain',
@@ -307,21 +304,32 @@ const Card = (props: {
                 style={{
                   display: 'flex',
                   justifyContent: 'space-between',
+                  flexWrap: 'wrap',
                   alignItems: 'center',
-                  padding: '12px 3px 6px 14px',
                   lineHeight: '18px',
-                  border: '1px solid black',
                   borderRadius: '8px',
                 }}
               >
-                <p style={{ fontWeight: '800' }}>{props.card.name}</p>
+                <p style={{ fontWeight: '800', fontFamily: 'garamond' }}>
+                  {props.card.name}
+                </p>
 
                 {/* Mana Cost */}
-                <div style={{ marginLeft: 'auto' }}>
+                <div
+                  style={{
+                    whiteSpace: 'nowrap',
+                  }}
+                >
                   {/* Generic */}
-                  {props?.card?.mana_cost?.replace(/\D+/g, '')}
+                  {(
+                    props?.card?.mana_cost ||
+                    props?.card?.card_faces?.[0].mana_cost
+                  )?.replace(/\D+/g, '')}
                   {/* Colored */}
-                  {props?.card?.mana_cost
+                  {(
+                    props?.card?.mana_cost ||
+                    props?.card?.card_faces?.[0].mana_cost
+                  )
                     ?.replace(/[{}\d]/g, '')
                     ?.replace(/W/g, '🌞')
                     ?.replace(/U/g, '💧')
@@ -351,24 +359,28 @@ const Card = (props: {
                   lineHeight: '1.1',
                   marginTop: '10px',
                 }}
+                data-element="hover-preview-oracle-text"
               >
                 {props.card.oracle_text ||
                   props.card.card_faces?.[0].oracle_text}
               </p>
 
               {/* Creature Stats */}
-              {props.card.power && (
-                <p
-                  style={{
-                    fontSize: '30px',
-                    marginTop: '5px',
-                    fontWeight: '800',
-                    textAlign: 'right',
-                  }}
-                >
-                  {props.card.power}/{props.card.toughness}
-                </p>
-              )}
+              {props.card.power ||
+                (props?.card?.card_faces?.[0].power && (
+                  <p
+                    style={{
+                      fontSize: '30px',
+                      marginTop: '5px',
+                      fontWeight: '800',
+                      textAlign: 'right',
+                    }}
+                  >
+                    {props.card.power || props?.card?.card_faces?.[0].power}/
+                    {props.card.toughness ||
+                      props?.card?.card_faces?.[0].toughness}
+                  </p>
+                ))}
             </div>
           )}
         </div>
