@@ -10,23 +10,107 @@ document.addEventListener('contextmenu', event => {
 
 const API_1 = 'https://api.scryfall.com';
 
-const BLOOD_RITES_PRECON_LIST = `1 Plains
-1 Chaplain's blessing
-1 Swamp
-1 Demonic Tutor
-1 Mountain
-1 Shock
-1 Island
+const DEFAULT_INPUT_VALUE = `1 The Ur-Dragon
+1 Leyline of the Guildpact
+1 Niv-Mizzet, Guildpact
+1 Incinerator of the Guilty
+1 Commercial District
+1 Dragon Tempest
+1 Miirym, Sentinel Wyrm
+1 Crux of Fate
+1 Atarka, World Render
+1 Tiamat
+1 Lathliss, Dragon Queen
+1 Dragonspeaker Shaman
+1 Rivaz of the Claw
+1 Utvara Hellkite
+1 Sarkhan, Soul Aflame
+1 Roaming Throne
+1 Farseek
+1 Explore
+1 Old Gnawbone
+1 Temur Ascendancy
+1 Dragon's Hoard
+1 Dragonlord Dromoka
+1 Dragonlord's Servant
+1 Rith, Liberated Primeval
+1 Scourge of Valkas
+1 Terror of the Peaks
+1 Hellkite Courser
+1 Scion of the Ur-Dragon
+1 Korlessa, Scale Singer
+1 Birds of Paradise
+1 Sarkhan Unbroken
+1 Sol Ring
+1 Arcane Signet
+1 Orb of Dragonkind
+1 Commander's Sphere
+1 Carnelian Orb of Dragonkind
+1 Jade Orb of Dragonkind
+1 Timeless Lotus
+1 Command Tower
+1 Haven of the Spirit Dragon
+1 Path of Ancestry
+1 Rogue's Passage
+1 Exotic Orchard
+1 Reliquary Tower
+1 Stomping Ground
+1 Steam Vents
+1 Blood Crypt
+1 Ketria Triome
+1 Indatha Triome
+1 Zagoth Triome
+1 Temple of the False God
+1 Terramorphic Expanse
+1 Yavimaya, Cradle of Growth
+1 Urborg, Tomb of Yawgmoth
+1 Sarkhan the Masterless
+1 Ugin, the Spirit Dragon
+1 Kindred Dominance
+1 Crucible of Fire
+1 Rhythm of the Wild
+1 Sneak Attack
+1 Warstorm Surge
+1 Urza's Incubator
+1 Herald's Horn
+1 Fist of Suns
+1 Dragon Arch
+1 Cultivate
+1 Nature's Lore
+1 Kodama's Reach
+1 Three Visits
+1 Rampant Growth
+1 Farewell
+1 Ruinous Ultimatum
+1 Explosive Vegetation
+1 Despark
+1 Swords to Plowshares
+1 Heroic Intervention
+1 Cyclonic Rift
+1 Sarkhan's Triumph
+1 Path to Exile
 1 Counterspell
-1 Forest
-1 Llanowar elves`;
+1 Dragon's Fire
+2 Plains
+2 Forest
+2 Swamp
+2 Mountain
+2 Island
+1 Steel Hellkite
+1 Nicol Bolas, the Ravager
+1 Zurgo and Ojutai
+1 Teneb, the Harvester
+1 Thrakkus the Butcher
+1 Morophon, the Boundless
+1 Decadent Dragon
+1 Two-Headed Hellkite
+1 Scion of Draco
+`;
 
 function Board() {
   const boardRef = React.useRef<HTMLDivElement>(null);
 
-  const [userInput, setUserInput] = React.useState<string>(
-    BLOOD_RITES_PRECON_LIST
-  );
+  const [userInput, setUserInput] = React.useState<string>(DEFAULT_INPUT_VALUE);
 
   const [loadedCards, setLoadedCards] = React.useState<
     ScryfallApiResponseCard[]
@@ -182,9 +266,11 @@ function Board() {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    const deck: ScryfallApiResponseCard[] = [];
     try {
-      userInput.split('\n').forEach(async cardName => {
-        const [quantity, ...name] = cardName.split(' ');
+      const cards = userInput.split('\n');
+      for (let i = 0; i < cards.length; i++) {
+        const [quantity, ...name] = cards[i].split(' ');
         const cardNameString = name.join(' ');
         for (let i = 0; i < parseInt(quantity); i++) {
           const response = await fetch(
@@ -192,21 +278,21 @@ function Board() {
           );
           const json: { data: ScryfallApiResponseCard[] } =
             await response.json();
-          setLoadedCards(prev => [
-            json.data.filter(
-              card =>
-                card.name.toLocaleLowerCase() === cardNameString.toLowerCase()
-            )[0],
-            ...prev,
-          ]);
-          // API policy: 10 req per second (wait 100ms)
-          await new Promise(resolve => setTimeout(resolve, 100));
+          const card = json.data.filter(
+            card =>
+              card.name.toLocaleLowerCase() === cardNameString.toLowerCase()
+          )[0];
+          deck.unshift(card || json.data[0]);
         }
-      });
+        // API policy: 10 req per second (wait 100ms)
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
     } catch (error) {
       console.error('Error while fetching: ', error);
     } finally {
       setLoading(false);
+      console.log('Rendering cards to table: ', deck);
+      setLoadedCards(deck);
     }
   }
 
@@ -277,6 +363,14 @@ function Board() {
               >
                 Clear Input
               </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setLoadedCards([]);
+                }}
+              >
+                Clear Table
+              </button>
             </div>
             {error && (
               <div
@@ -312,14 +406,14 @@ function Board() {
       {!loading && !error && loadedCards.length
         ? loadedCards?.map((card, index) => {
             if (!card?.id) {
-              return <div>{JSON.stringify(card)}</div>;
+              return <div key={index}>{JSON.stringify(card)}</div>;
             }
 
             return (
               <Card
                 key={card.id + index}
                 card={card}
-                initialCoordinates={{ x: 5 + index, y: 650 + index }}
+                initialCoordinates={{ x: 5 + index, y: 600 + index }}
                 index={index}
                 isSelected={selectedCards.includes(card.id)}
                 dragOffset={dragOffset}

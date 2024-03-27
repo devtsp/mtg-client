@@ -131,7 +131,7 @@ const Card = (props: {
           // card 3d position
           top: position.y,
           left: position.x,
-          zIndex: isMouseOver ? 101 : zIndex,
+          zIndex: zIndex,
 
           // card style states
           ...(isTapped && { transform: 'rotate(-30deg)' }),
