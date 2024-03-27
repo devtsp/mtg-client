@@ -1,9 +1,8 @@
 import React from 'react';
-
-import type { MagicApiCardResponse } from 'src/types';
+import { ScryfallApiResponseCard } from '../types';
 
 const Card = (props: {
-  card: MagicApiCardResponse;
+  card: Partial<ScryfallApiResponseCard>;
   initialCoordinates: { x: number; y: number };
   index: number;
   isSelected: boolean;
@@ -13,7 +12,7 @@ const Card = (props: {
   const cardRef = React.useRef<HTMLDivElement>(null);
   const [position, setPosition] = React.useState(props.initialCoordinates);
   const [isTapped, setIsTapped] = React.useState(false);
-  const [isFaceDown, setIsFaceDown] = React.useState(true);
+  const [isFaceDown, setIsFaceDown] = React.useState(false);
 
   const [isMouseOver, setIsMouseOver] = React.useState(false);
   const [isMouseDown, setIsMouseDown] = React.useState(false);
@@ -85,7 +84,7 @@ const Card = (props: {
     if (props.isSelected) {
       setZIndex(100);
       // Calculate the drag offset for this card based on its initial position
-      const dragStartPos = props.dragStartPositions[props.card.id];
+      const dragStartPos = props.dragStartPositions[props?.card?.id || -1];
       if (dragStartPos) {
         setPosition({
           x: dragStartPos.x + props.dragOffset.x,
@@ -124,7 +123,7 @@ const Card = (props: {
           aspectRatio: 1 / 1.39,
           borderRadius: '7px',
           // Original card image is set as the backgroundImage of the main container
-          backgroundImage: `url(${props.card.imageUrl})`,
+          backgroundImage: `url(${props.card?.image_uris?.png})`,
           backgroundSize: 'contain',
           backgroundRepeat: 'no-repeat',
           backgroundPosition: 'center',
@@ -148,12 +147,25 @@ const Card = (props: {
         {/* If no image provided display raw data */}
 
         {/* Main raw data container */}
-        {!props.card.imageUrl && !isFaceDown && (
+        {!props.card.image_uris?.png && !isFaceDown && (
           <div
             style={{
-              backgroundColor: props.card.colorIdentity.includes('W')
-                ? 'wheat'
-                : 'yellow',
+              // backgroundColor: (() => {
+              //   switch (props?.card?.color_identity?.[0]) {
+              //     case 'W':
+              //       return 'wheat';
+              //     case 'U':
+              //       return 'cyan';
+              //     case 'B':
+              //       return 'darkgray';
+              //     case 'R':
+              //       return 'salmon';
+              //     case 'G':
+              //       return 'yellowgreen';
+              //     default:
+              //       return 'lightgray';
+              //   }
+              // })(),
               borderRadius: '7px',
               height: '100%',
               overflow: 'hidden',
@@ -189,15 +201,15 @@ const Card = (props: {
               {/* Mana Cost */}
               <div>
                 {/* Generic */}
-                {props.card.manaCost.replace(/\D+/g, '')}
+                {props?.card?.mana_cost?.replace(/\D+/g, '')}
                 {/* Colored */}
-                {props.card.manaCost
-                  .replace(/[{}\d]/g, '')
-                  .replace(/W/g, '🌞')
-                  .replace(/U/g, '💧')
-                  .replace(/B/g, '💀')
-                  .replace(/G/g, '🌳')
-                  .replace(/R/g, '🌋')}
+                {props?.card?.mana_cost
+                  ?.replace(/[{}\d]/g, '')
+                  ?.replace(/W/g, '🌞')
+                  ?.replace(/U/g, '💧')
+                  ?.replace(/B/g, '💀')
+                  ?.replace(/G/g, '🌳')
+                  ?.replace(/R/g, '🌋')}
               </div>
             </div>
 
@@ -208,7 +220,7 @@ const Card = (props: {
                 lineHeight: '1',
               }}
             >
-              {props.card.type}
+              {props.card.type_line}
             </p>
 
             {/* Card Text */}
@@ -224,7 +236,7 @@ const Card = (props: {
                 fontSize: '12px',
               }}
             >
-              {props.card.text}
+              {props.card.oracle_text || props.card.card_faces?.[0].oracle_text}
             </p>
 
             {/* Creature Stats */}
@@ -248,14 +260,13 @@ const Card = (props: {
       {isMouseOver && !isMouseDown && (
         <div
           style={{
-            width: '20vw',
+            width: 'max(15vw, 300px)',
             aspectRatio: '1 / 1.4',
-            ...(props.card.imageUrl
+            ...(props.card.image_uris?.png
               ? {
-                  backgroundImage: `url(${props.card.imageUrl})`,
+                  backgroundImage: `url(${props.card.image_uris?.png})`,
                 }
               : {
-                  backgroundColor: 'white',
                   fontSize: '20px',
                   padding: '15px',
                   display: 'flex',
@@ -266,13 +277,13 @@ const Card = (props: {
             lineHeight: '1.1',
             borderRadius: '18px',
             position: 'fixed',
-            right: 0,
+            right: '50%',
             cursor: 'pointer',
             transition: 'all 0.1s ease-in-out',
             zIndex: 1000,
             pointerEvents: 'none',
             fontFamily: 'garamond',
-            fontSize: '26px',
+            fontSize: '20px',
             padding: '30px',
             backgroundSize: 'contain',
             backgroundRepeat: 'no-repeat',
@@ -283,10 +294,9 @@ const Card = (props: {
           {/* If no image available display raw data */}
 
           {/* Main raw data container */}
-          {!props.card.imageUrl && !isFaceDown && (
+          {!props.card.image_uris?.png && !isFaceDown && (
             <div
               style={{
-                backgroundColor: 'white',
                 height: '100%',
                 display: 'flex',
                 flexDirection: 'column',
@@ -300,7 +310,7 @@ const Card = (props: {
                   alignItems: 'center',
                   padding: '12px 3px 6px 14px',
                   lineHeight: '18px',
-                  border: '3px ridge lightgray',
+                  border: '1px solid black',
                   borderRadius: '8px',
                 }}
               >
@@ -309,15 +319,15 @@ const Card = (props: {
                 {/* Mana Cost */}
                 <div style={{ marginLeft: 'auto' }}>
                   {/* Generic */}
-                  {props.card.manaCost.replace(/\D+/g, '')}
+                  {props?.card?.mana_cost?.replace(/\D+/g, '')}
                   {/* Colored */}
-                  {props.card.manaCost
-                    .replace(/[{}\d]/g, '')
-                    .replace(/W/g, '🌞')
-                    .replace(/U/g, '💧')
-                    .replace(/B/g, '💀')
-                    .replace(/G/g, '🌳')
-                    .replace(/R/g, '🌋')}
+                  {props?.card?.mana_cost
+                    ?.replace(/[{}\d]/g, '')
+                    ?.replace(/W/g, '🌞')
+                    ?.replace(/U/g, '💧')
+                    ?.replace(/B/g, '💀')
+                    ?.replace(/G/g, '🌳')
+                    ?.replace(/R/g, '🌋')}
                 </div>
               </div>
 
@@ -328,13 +338,13 @@ const Card = (props: {
                   lineHeight: '18px',
                 }}
               >
-                {props.card.type}
+                {props.card.type_line}
               </p>
 
               {/* Card Text */}
               <p
                 style={{
-                  border: '5px inset lightgray',
+                  border: '1px solid black',
                   padding: '10px 14px',
                   maxHeight: '50%',
                   overflow: 'auto',
@@ -342,7 +352,8 @@ const Card = (props: {
                   marginTop: '10px',
                 }}
               >
-                {props.card.text}
+                {props.card.oracle_text ||
+                  props.card.card_faces?.[0].oracle_text}
               </p>
 
               {/* Creature Stats */}

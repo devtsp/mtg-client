@@ -1,4 +1,4 @@
-:root {
+body {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
@@ -10,11 +10,17 @@
 }
 
 * {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   box-sizing: border-box;
   margin: 0;
   padding: 0;
   min-width: 0;
-  cursor: grab;
+  user-select: none;
+}
+
+button {
+  padding: 3px 9px;
+  display: inline;
 }
 
 /* width */
@@ -36,8 +42,4 @@
 /* Handle on hover */
 [data-element='CARD'] ::-webkit-scrollbar-thumb:hover {
   background: #555;
-}
-
-p {
-  /* color:  */
 }
