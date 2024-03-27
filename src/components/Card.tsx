@@ -136,7 +136,7 @@ const Card = (props: {
           // card style states
           ...(isTapped && { transform: 'rotate(-30deg)' }),
           ...(isFaceDown && {
-            backgroundImage: 'url(public/card_back.jpg)',
+            backgroundImage: 'url(card_back.jpg)',
             backgroundSize: 'cover',
           }),
           ...(isMouseOver && { outline: '4px solid cyan' }),
