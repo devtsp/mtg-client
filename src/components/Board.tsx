@@ -2,7 +2,7 @@
 import React from 'react';
 
 import Card from './Card';
-import type { ScryfallApiResponseList } from 'src/types';
+import type { ScryfallApiResponseCard } from 'src/types';
 
 document.addEventListener('contextmenu', event => {
   event.preventDefault();
@@ -13,14 +13,13 @@ const API_1 = 'https://api.scryfall.com';
 function Board() {
   const boardRef = React.useRef<HTMLDivElement>(null);
 
-  const [userInput, setUserInput] = React.useState<string>('');
+  const [userInput, setUserInput] = React.useState<string>('Omnath');
 
-  const [fetched, setFetched] = React.useState<
-    Partial<ScryfallApiResponseList>
-  >({
-    data: [],
-  });
+  const [loadedCards, setLoadedCards] = React.useState<
+    ScryfallApiResponseCard[]
+  >([]);
   const [error, setError] = React.useState<any>();
+  const [loading, setLoading] = React.useState<boolean>(false);
 
   const [selectedCards, setSelectedCards] = React.useState<string[]>([]);
   const [dragStartPositions, setDragStartPositions] = React.useState<{
@@ -119,7 +118,7 @@ function Board() {
     const scrollLeft = document.documentElement.scrollLeft;
     const scrollTop = document.documentElement.scrollTop;
 
-    const newSelectedCards = fetched?.data?.filter(card => {
+    const newSelectedCards = loadedCards.filter(card => {
       const cardRect = document
         .getElementById(card.id)
         ?.getBoundingClientRect();
@@ -164,6 +163,28 @@ function Board() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setError(null);
+    setLoading(true);
+    fetch(API_1 + '/cards/search?q=' + userInput)
+      .then(r => {
+        if (!r.ok) {
+          throw new Error(r.statusText);
+        }
+        return r.json();
+      })
+      .then(list => {
+        console.log(list);
+        setLoadedCards(prev => [...prev, ...list.data]);
+      })
+      .catch(err => {
+        console.log(err);
+        setError(err);
+      })
+      .finally(() => setLoading(false));
+  }
+
+  React.useEffect(() => {
+    setLoading(true);
     fetch(API_1 + '/cards/search?page=1&q=' + userInput)
       .then(r => {
         if (!r.ok) {
@@ -171,15 +192,15 @@ function Board() {
         }
         return r.json();
       })
-      .then(cards => {
-        console.log(cards);
-        setFetched(cards);
+      .then(list => {
+        setLoadedCards(list.data);
       })
       .catch(err => {
         console.log(err);
         setError(err);
-      });
-  }
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <div
@@ -259,15 +280,6 @@ function Board() {
               </div>
             )}
           </form>
-          <a
-            href="https://scryfall.com/docs/api"
-            target="_blank"
-            style={{
-              margin: '20px',
-            }}
-          >
-            scryfall api reference
-          </a>
         </div>
       )}
 
@@ -287,25 +299,25 @@ function Board() {
       )}
 
       {/* Cards Spawned */}
-      {!error &&
-        fetched?.data?.length &&
-        fetched.data?.map((card, index) => {
-          if (!card?.id) {
-            return <div>Uups</div>;
-          }
+      {!loading && !error && loadedCards.length
+        ? loadedCards?.map((card, index) => {
+            if (!card?.id) {
+              return <div>Uups</div>;
+            }
 
-          return (
-            <Card
-              key={card.id + index}
-              card={card}
-              initialCoordinates={{ x: index * 30 + 5, y: 650 }}
-              index={index}
-              isSelected={selectedCards.includes(card.id)}
-              dragOffset={dragOffset}
-              dragStartPositions={dragStartPositions}
-            />
-          );
-        })}
+            return (
+              <Card
+                key={card.id + index}
+                card={card}
+                initialCoordinates={{ x: 5 + index * 20, y: 650 + index }}
+                index={index}
+                isSelected={selectedCards.includes(card.id)}
+                dragOffset={dragOffset}
+                dragStartPositions={dragStartPositions}
+              />
+            );
+          })
+        : null}
     </div>
   );
 }
