@@ -267,6 +267,7 @@ function Board() {
     setLoading(true);
     setError(null);
     const deck: ScryfallApiResponseCard[] = [];
+    const failed = [];
     try {
       const cards = userInput.split('\n');
       for (let i = 0; i < cards.length; i++) {
@@ -276,6 +277,10 @@ function Board() {
           const response = await fetch(
             API_1 + '/cards/search?q=' + cardNameString
           );
+          if (response.status === 404) {
+            failed.push(`"${cardNameString}" not found`);
+            continue;
+          }
           const json: { data: ScryfallApiResponseCard[] } =
             await response.json();
           const card = json.data.filter(
@@ -289,10 +294,14 @@ function Board() {
       }
     } catch (error) {
       console.error('Error while fetching: ', error);
+      setError(error);
     } finally {
       setLoading(false);
-      console.log('Rendering cards to table: ', deck);
       setLoadedCards(deck);
+      console.log('Rendering cards to table: ', deck);
+      if (failed.length) {
+        setError(failed.join('\n'));
+      }
     }
   }
 
@@ -376,6 +385,12 @@ function Board() {
               <div
                 style={{
                   color: 'crimson',
+                  whiteSpace: 'pre-wrap',
+                  lineHeight: '1',
+                  margin: '10px 0',
+                  padding: '6px 12px 8px',
+                  fontSize: '12px',
+                  backgroundColor: 'rgba(255, 0, 0, 0.1)',
                 }}
               >
                 {error.toString()}
@@ -403,7 +418,7 @@ function Board() {
       {loading && <div>Loading...</div>}
 
       {/* Cards Spawned */}
-      {!loading && !error && loadedCards.length
+      {!loading && loadedCards.length
         ? loadedCards?.map((card, index) => {
             if (!card?.id) {
               return <div key={index}>{JSON.stringify(card)}</div>;
