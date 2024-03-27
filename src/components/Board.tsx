@@ -10,10 +10,23 @@ document.addEventListener('contextmenu', event => {
 
 const API_1 = 'https://api.scryfall.com';
 
+const BLOOD_RITES_PRECON_LIST = `1 Plains
+1 Chaplain's blessing
+1 Swamp
+1 Demonic Tutor
+1 Mountain
+1 Shock
+1 Island
+1 Counterspell
+1 Forest
+1 Llanowar elves`;
+
 function Board() {
   const boardRef = React.useRef<HTMLDivElement>(null);
 
-  const [userInput, setUserInput] = React.useState<string>('Omnath');
+  const [userInput, setUserInput] = React.useState<string>(
+    BLOOD_RITES_PRECON_LIST
+  );
 
   const [loadedCards, setLoadedCards] = React.useState<
     ScryfallApiResponseCard[]
@@ -156,51 +169,46 @@ function Board() {
       setSelectedCards([]);
     } else if (e.key.toLowerCase() === 'm') {
       const focusedElement = document.activeElement;
-      if (focusedElement instanceof HTMLInputElement) return;
+      if (
+        focusedElement instanceof HTMLTextAreaElement ||
+        focusedElement instanceof HTMLInputElement
+      )
+        return;
       setMenuOpen(!menuOpen);
     }
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setLoading(true);
     setError(null);
-    setLoading(true);
-    fetch(API_1 + '/cards/search?q=' + userInput)
-      .then(r => {
-        if (!r.ok) {
-          throw new Error(r.statusText);
+    try {
+      userInput.split('\n').forEach(async cardName => {
+        const [quantity, ...name] = cardName.split(' ');
+        const cardNameString = name.join(' ');
+        for (let i = 0; i < parseInt(quantity); i++) {
+          const response = await fetch(
+            API_1 + '/cards/search?q=' + cardNameString
+          );
+          const json: { data: ScryfallApiResponseCard[] } =
+            await response.json();
+          setLoadedCards(prev => [
+            json.data.filter(
+              card =>
+                card.name.toLocaleLowerCase() === cardNameString.toLowerCase()
+            )[0],
+            ...prev,
+          ]);
+          // API policy: 10 req per second (wait 100ms)
+          await new Promise(resolve => setTimeout(resolve, 100));
         }
-        return r.json();
-      })
-      .then(list => {
-        console.log(list);
-        setLoadedCards(prev => [...prev, ...list.data]);
-      })
-      .catch(err => {
-        console.log(err);
-        setError(err);
-      })
-      .finally(() => setLoading(false));
+      });
+    } catch (error) {
+      console.error('Error while fetching: ', error);
+    } finally {
+      setLoading(false);
+    }
   }
-
-  React.useEffect(() => {
-    setLoading(true);
-    fetch(API_1 + '/cards/search?page=1&q=' + userInput)
-      .then(r => {
-        if (!r.ok) {
-          throw new Error(r.statusText);
-        }
-        return r.json();
-      })
-      .then(list => {
-        setLoadedCards(list.data);
-      })
-      .catch(err => {
-        console.log(err);
-        setError(err);
-      })
-      .finally(() => setLoading(false));
-  }, []);
 
   return (
     <div
@@ -224,8 +232,7 @@ function Board() {
       {menuOpen && (
         <div
           style={{
-            resize: 'both',
-            overflow: 'auto',
+            width: '350px',
             position: 'absolute',
             right: 0,
             height: '100%',
@@ -241,13 +248,14 @@ function Board() {
             }}
           >
             {/* TEXT INPUT */}
-            <input
+            <textarea
               style={{
                 width: '100%',
                 padding: '1rem',
                 resize: 'none',
               }}
               value={userInput}
+              rows={40}
               onChange={e => setUserInput(e.target.value)}
               name="cardList"
               id="card-list"
@@ -260,14 +268,14 @@ function Board() {
                 gap: '10px',
               }}
             >
-              <button type="submit">Send</button>
+              <button type="submit">Spawn Deck</button>
               <button
                 type="reset"
                 onClick={() => {
                   setUserInput('');
                 }}
               >
-                Clear
+                Clear Input
               </button>
             </div>
             {error && (
@@ -298,18 +306,20 @@ function Board() {
         />
       )}
 
+      {loading && <div>Loading...</div>}
+
       {/* Cards Spawned */}
       {!loading && !error && loadedCards.length
         ? loadedCards?.map((card, index) => {
             if (!card?.id) {
-              return <div>Uups</div>;
+              return <div>{JSON.stringify(card)}</div>;
             }
 
             return (
               <Card
                 key={card.id + index}
                 card={card}
-                initialCoordinates={{ x: 5 + index * 20, y: 650 + index }}
+                initialCoordinates={{ x: 5 + index, y: 650 + index }}
                 index={index}
                 isSelected={selectedCards.includes(card.id)}
                 dragOffset={dragOffset}
